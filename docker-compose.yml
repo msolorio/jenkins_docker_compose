@@ -1,14 +1,29 @@
-version: '3.9'
+version: '3'
 services:
 
+    # This container will hold and run our application during
+    # run of the pipeline
+    docker:
+        container_name: jenkins-docker
+        privileged: true
+        environment:
+            - DOCKER_TLS_CERTDIR=/certs
+        volumes:
+            - jenkins-docker-certs:/certs/client
+            - jenkins-data:/var/jenkins_home
+        ports:
+            - 3000:3000
+            - 2376:2376
+        image: docker:dind
+        command: --storage-driver=overlay2
+
     # This container holds the Jenkins application and publishes
-    # the UI used to interact with Jenkins
+    # the Jenkins UI
     myjenkins-blueocean:
         container_name: jenkins-blueocean
         build:
           context: .
           dockerfile: Dockerfile
-        network_mode: jenkins
         environment:
             - DOCKER_HOST=tcp://docker:2376
             - DOCKER_CERT_PATH=/certs/client
@@ -20,26 +35,6 @@ services:
             - jenkins-data:/var/jenkins_home
             - jenkins-docker-certs:/certs/client:ro
             - $HOME:/home
-
-    # - This container will hold and run our application during
-    # run of the pipeline
-    # - Uses the Docker in Docker image
-    docker:
-        container_name: jenkins-docker
-        privileged: true
-        network_mode: jenkins
-        environment:
-            - DOCKER_TLS_CERTDIR=/certs
-        volumes:
-            - jenkins-docker-certs:/certs/client
-            - jenkins-data:/var/jenkins_home
-        ports:
-            - 3000:3000
-            - 2376:2376
-        image: docker:dind
-
-networks:
-  jenkins:
 
 volumes:
   jenkins-docker-certs:
